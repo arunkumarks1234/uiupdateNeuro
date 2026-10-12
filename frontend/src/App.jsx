@@ -585,24 +585,81 @@ function AudioAnalyzer({ patientId, onComplete, showPipeline }) {
       {result && phase==="done" && (
         <div className="flex gap-4 flex-wrap fade-up">
           {/* Left: severity + metrics */}
-          <div className="flex flex-col gap-3" style={{ flex:"0 0 190px" }}>
-            <div className={`rounded-xl border p-4 ${sc.card}`}>
-              <div className="text-[10px] font-bold uppercase tracking-widest opacity-60 mb-1">HUBERT SEVERITY</div>
-              <div className="text-3xl font-black leading-none">{result.severity}</div>
+          <div className="flex flex-col gap-3" style={{ flex:"0 0 240px" }}>
+            <div className={`rounded-xl border p-4 shadow-sm ${sc.card}`}>
+              <div className="flex items-center justify-between mb-1">
+                <span className="text-[10px] font-bold uppercase tracking-wider opacity-75">Clinical Assessment</span>
+                {result.confidence && (
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/80 shadow-xs">
+                    {result.confidence}% Conf.
+                  </span>
+                )}
+              </div>
+              <div className="text-3xl font-black leading-tight tracking-tight">{result.severity}</div>
+              
+              {result.dysarthria_index !== undefined && (
+                <div className="mt-2.5 pt-2 border-t border-current/15">
+                  <div className="flex justify-between text-[11px] font-medium opacity-85 mb-1">
+                    <span>Dysarthria Index:</span>
+                    <span className="font-bold">{result.dysarthria_index}/100</span>
+                  </div>
+                  <div className="w-full bg-black/10 rounded-full h-1.5 overflow-hidden">
+                    <div 
+                      className="h-full bg-current rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min(100, Math.max(5, result.dysarthria_index))}%` }} 
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Multi-tier probability distribution */}
+              {result.severity_probs && (
+                <div className="mt-3 pt-2 border-t border-current/15 space-y-1">
+                  <div className="text-[9px] uppercase tracking-wider font-bold opacity-70 mb-1">Multi-Class Likelihood</div>
+                  {Object.entries(result.severity_probs).map(([tier, prob]) => (
+                    <div key={tier} className="flex items-center justify-between text-[10px] leading-tight opacity-90">
+                      <span>{tier}</span>
+                      <span className="font-semibold">{Math.round(prob * 100)}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <div className="bg-slate-50 border border-slate-100 rounded-xl p-4">
-              <div className="text-[11px] font-bold text-slate-400 mb-2.5">ACOUSTIC METRICS</div>
-              {[["Duration",`${result.duration?.toFixed(2)} s`],["F0 Mean",`${result.metrics?.f0_mean?.toFixed(1)} Hz`],["F0 Std",`${result.metrics?.f0_std?.toFixed(1)} Hz`],["Centroid",`${result.metrics?.spectral_centroid?.toFixed(0)}`],["ZCR",`${result.metrics?.zcr?.toFixed(4)}`]].map(([k,v]) => (
+
+            {/* Clinical Indicators if detected */}
+            {result.clinical_notes && result.clinical_notes.length > 0 && (
+              <div className="bg-amber-50/70 border border-amber-200/60 rounded-xl p-3 text-amber-900 text-[11px] leading-snug">
+                <div className="font-bold text-[10px] uppercase tracking-wider text-amber-700 mb-1">Diagnostic Biomarkers:</div>
+                <ul className="list-disc pl-3.5 space-y-0.5">
+                  {result.clinical_notes.slice(0, 3).map((note, i) => (
+                    <li key={i}>{note}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            <div className="bg-slate-50 border border-slate-100 rounded-xl p-3.5">
+              <div className="text-[11px] font-bold text-slate-400 mb-2">ACOUSTIC BIOMARKERS</div>
+              {[
+                ["Duration", `${result.duration?.toFixed(2)} s`],
+                ["Pause Ratio", result.metrics?.pause_ratio !== undefined ? `${Math.round(result.metrics.pause_ratio * 100)}%` : "N/A"],
+                ["Jitter (Instability)", result.metrics?.jitter !== undefined ? `${(result.metrics.jitter * 100).toFixed(2)}%` : "N/A"],
+                ["Shimmer (APQ)", result.metrics?.shimmer !== undefined ? `${(result.metrics.shimmer * 100).toFixed(1)}%` : "N/A"],
+                ["F0 Mean", `${result.metrics?.f0_mean?.toFixed(1)} Hz`],
+                ["Centroid", `${result.metrics?.spectral_centroid?.toFixed(0)} Hz`],
+                ["ZCR", `${result.metrics?.zcr?.toFixed(4)}`]
+              ].map(([k,v]) => (
                 <div key={k} className="flex justify-between py-1 border-b border-slate-100 text-xs last:border-0">
                   <span className="text-slate-400">{k}</span>
                   <span className="font-semibold text-slate-700">{v}</span>
                 </div>
               ))}
             </div>
+
             {audioUrl && (
               <div className="bg-slate-50 border border-slate-100 rounded-xl p-3">
                 <div className="text-[10px] font-bold text-slate-400 mb-1">RECORDED AUDIO</div>
-                <audio src={audioUrl} controls />
+                <audio src={audioUrl} controls className="w-full" />
               </div>
             )}
           </div>

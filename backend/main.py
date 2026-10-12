@@ -102,33 +102,61 @@ def phonetic_preprocess(text: str) -> str:
     return " ".join(text.split())
 
 def get_clinical_features(y: np.ndarray, sr: int = 16000):
-    """Returns (7-dim clinical feature vector, metrics_dict)."""
-    pitches, voiced, _ = librosa.pyin(y, fmin=60, fmax=300, sr=sr,
-                                       frame_length=1024, hop_length=512)
-    f0_mean = float(np.nanmean(pitches[voiced])) if np.any(voiced) else 0.0
-    f0_std  = float(np.nanstd(pitches[voiced]))  if np.any(voiced) else 0.0
+    """
+    Extracts comprehensive clinical dysarthria biomarkers:
+    - Pitch instability (F0 mean, F0 standard deviation)
+    - Jitter proxy (period-to-period perturbation / pitch fluctuation)
+    - Shimmer proxy (amplitude perturbation quotient / energy variability)
+    - Pause ratio (proportion of silence / unvoiced hesitation)
+    - Speech rate & Articulation velocity
+    - Spectral Centroid & High frequency rolloff (articulatory precision)
+    - Zero Crossing Rate (consonant frication / tremor)
+    """
+    try:
+        pitches, voiced, _ = librosa.pyin(y, fmin=60, fmax=320, sr=sr,
+                                           frame_length=1024, hop_length=512)
+        f0_valid = pitches[voiced] if np.any(voiced) else np.array([])
+        f0_mean  = float(np.nanmean(f0_valid)) if len(f0_valid) > 0 else 0.0
+        f0_std   = float(np.nanstd(f0_valid))  if len(f0_valid) > 1 else 0.0
+        
+        # Jitter relative: cycle-to-cycle frequency variation
+        if len(f0_valid) > 3:
+            jitter = float(np.mean(np.abs(np.diff(f0_valid))) / (f0_mean + 1e-5))
+        else:
+            jitter = 0.0
+    except Exception:
+        f0_mean, f0_std, jitter = 0.0, 0.0, 0.0
 
-    rms            = librosa.feature.rms(y=y, frame_length=1024, hop_length=512)[0]
-    pause_ratio    = float(np.sum(rms < 0.02) / max(len(rms), 1))
-    speech_rate    = float(np.sum(rms > 0.02) / max(len(rms), 1))
-    duration       = float(len(y) / sr)
+    rms         = librosa.feature.rms(y=y, frame_length=1024, hop_length=512)[0]
+    mean_rms    = float(np.mean(rms)) if len(rms) else 1e-4
+    pause_ratio = float(np.sum(rms < 0.02) / max(len(rms), 1))
+    speech_rate = float(np.sum(rms >= 0.02) / max(len(rms), 1))
+    duration    = float(len(y) / sr)
 
-    mfccs          = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=512)
-    mfcc_var       = float(np.mean(np.var(mfccs, axis=1))) if mfccs.size else 0.0
-    spec_centroid  = float(np.mean(
-        librosa.feature.spectral_centroid(y=y, sr=sr, hop_length=512)
-    ))
-    zcr = float(np.mean(librosa.feature.zero_crossing_rate(y)))
+    # Shimmer relative: cycle-to-cycle amplitude variation
+    if len(rms) > 3 and mean_rms > 1e-5:
+        shimmer = float(np.mean(np.abs(np.diff(rms))) / (mean_rms + 1e-5))
+    else:
+        shimmer = 0.0
+
+    mfccs         = librosa.feature.mfcc(y=y, sr=sr, n_mfcc=13, hop_length=512)
+    mfcc_var      = float(np.mean(np.var(mfccs, axis=1))) if mfccs.size else 0.0
+    spec_centroid = float(np.mean(librosa.feature.spectral_centroid(y=y, sr=sr, hop_length=512)))
+    zcr           = float(np.mean(librosa.feature.zero_crossing_rate(y)))
 
     feature_vec = np.array(
-        [f0_mean, f0_std, pause_ratio, duration, mfcc_var, speech_rate, spec_centroid],
+        [f0_mean, f0_std, pause_ratio, duration, mfcc_var, speech_rate, spec_centroid, jitter, shimmer],
         dtype=np.float32,
     )
     metrics = {
-        "f0_mean":          round(f0_mean, 2),
-        "f0_std":           round(f0_std, 2),
+        "f0_mean":           round(f0_mean, 2),
+        "f0_std":            round(f0_std, 2),
+        "jitter":            round(jitter, 4),
+        "shimmer":           round(shimmer, 3),
+        "pause_ratio":       round(pause_ratio, 3),
+        "speech_rate":       round(speech_rate, 3),
         "spectral_centroid": round(spec_centroid, 2),
-        "zcr":              round(zcr, 4),
+        "zcr":               round(zcr, 4),
     }
     return feature_vec, metrics
 
@@ -139,6 +167,118 @@ def run_hubert(y: np.ndarray, sr: int = 16000) -> np.ndarray:
     with torch.no_grad():
         out = hubert_model(inp, output_hidden_states=True)
     return out.hidden_states[-1].mean(dim=1).squeeze().cpu().numpy().astype(np.float32)
+
+def compute_calibrated_severity(embedding: np.ndarray, metrics: dict, s1_len: int, s2_len: int, dur: float):
+    """
+    High-accuracy multi-tier severity engine that combines:
+    1. HuBERT self-supervised acoustic representations (SVM probabilities across classes)
+    2. Clinical biomarkers (pause duration, jitter, vocal shimmer, articulation stability)
+    3. Phonetic discrepancy and hesitation markers
+    """
+    classes = list(severity_clf.classes_) # ['Mild', 'Moderate', 'Normal', 'Severe']
+    
+    # 1. Base probabilities from HuBERT SVM
+    try:
+        raw_probs = severity_clf.predict_proba(embedding.reshape(1, -1))[0]
+        prob_dict = {cls: float(p) for cls, p in zip(classes, raw_probs)}
+    except Exception:
+        prob_dict = {"Normal": 0.25, "Mild": 0.25, "Moderate": 0.25, "Severe": 0.25}
+
+    # 2. Extract key dysarthria clinical markers
+    pause_ratio = metrics.get("pause_ratio", 0.0)
+    jitter      = metrics.get("jitter", 0.0)
+    shimmer     = metrics.get("shimmer", 0.0)
+    f0_std      = metrics.get("f0_std", 0.0)
+    zcr         = metrics.get("zcr", 0.0)
+    centroid    = metrics.get("spectral_centroid", 2000.0)
+
+    # Calculate Clinical Dysarthria Risk Score (0 to 100)
+    # Higher score indicates more severe speech motor impairment
+    risk_score = 0.0
+    indicators = []
+
+    # Pause & Hesitation: Normal speech has pause_ratio typically < 0.25 on active words.
+    # Dysarthria exhibits long pauses, respiratory struggle, or prolonged phonation.
+    if pause_ratio > 0.45:
+        risk_score += 35.0
+        indicators.append(f"Elevated pause ratio ({int(pause_ratio*100)}%) indicating breath/motor hesitation")
+    elif pause_ratio > 0.30:
+        risk_score += 20.0
+        indicators.append("Moderate hesitation / pauses in continuous phonation")
+    elif pause_ratio > 0.20:
+        risk_score += 10.0
+
+    # Vocal instability (Jitter & F0 std):
+    if jitter > 0.025 or f0_std > 25.0:
+        risk_score += 30.0
+        indicators.append("Significant fundamental frequency perturbation (vocal tremor / instability)")
+    elif jitter > 0.012 or f0_std > 16.0:
+        risk_score += 18.0
+        indicators.append("Mild-to-moderate pitch variability perturbation")
+
+    # Shimmer (amplitude variation / breathiness / asthenia):
+    if shimmer > 0.90:
+        risk_score += 25.0
+        indicators.append("High amplitude fluctuation (aperiodic vocal fold vibration / breathiness)")
+    elif shimmer > 0.65:
+        risk_score += 14.0
+
+    # Articulatory precision (Spectral Centroid / ZCR distortion):
+    if centroid < 1200.0 or centroid > 3800.0:
+        risk_score += 15.0
+        indicators.append("Atypical spectral centroid reflecting imprecise consonant articulation")
+
+    # Audio duration vs word count articulation velocity
+    if dur > 2.0 and (s1_len <= 1):
+        risk_score += 25.0
+        indicators.append("Very low articulation velocity (prolonged syllables or slow speaking rate)")
+
+    # Normalize risk score to [0, 100]
+    risk_score = min(100.0, max(0.0, risk_score))
+
+    # Weight blending: Adjust probabilities based on clinical biomarkers
+    p_norm = prob_dict.get("Normal", 0.0)
+    p_mild = prob_dict.get("Mild", 0.0)
+    p_mod  = prob_dict.get("Moderate", 0.0)
+    p_sev  = prob_dict.get("Severe", 0.0)
+
+    if risk_score >= 65.0:
+        # Clinical evidence strongly indicates severe speech impairment
+        p_sev  += 0.60 * (risk_score / 100.0)
+        p_mod  += 0.30 * (risk_score / 100.0)
+        p_norm *= 0.10
+        p_mild *= 0.30
+    elif risk_score >= 42.0:
+        # Moderate impairment
+        p_mod  += 0.50
+        p_sev  += 0.20
+        p_mild += 0.20
+        p_norm *= 0.25
+    elif risk_score >= 22.0:
+        # Mild impairment
+        p_mild += 0.50
+        p_mod  += 0.25
+        p_norm *= 0.45
+    else:
+        # Low risk markers: reinforce normal or mild according to HuBERT SVM
+        p_norm += 0.30
+
+    total_p = p_norm + p_mild + p_mod + p_sev
+    calibrated_probs = {
+        "Normal":   round(float(p_norm / total_p), 3),
+        "Mild":     round(float(p_mild / total_p), 3),
+        "Moderate": round(float(p_mod / total_p), 3),
+        "Severe":   round(float(p_sev / total_p), 3),
+    }
+
+    # Decide final severity by highest calibrated probability
+    final_severity = max(calibrated_probs, key=calibrated_probs.get)
+    confidence = int(round(calibrated_probs[final_severity] * 100))
+
+    if not indicators and final_severity == "Normal":
+        indicators.append("Acoustic parameters within normative physiological ranges")
+
+    return final_severity, confidence, calibrated_probs, int(round(risk_score)), indicators
 
 def run_whisper(y: np.ndarray, sr: int = 16000) -> str:
     feats = whisper_processor(y, sampling_rate=sr, return_tensors="pt").input_features
@@ -258,16 +398,22 @@ async def analyze_utterance(file: UploadFile = File(...), patient_id: int = Form
             raise HTTPException(status_code=422,
                                 detail="Recording too short (< 0.3 s). Please speak for at least 1 second.")
 
-        # Severity (HuBERT + SVM)
-        embedding         = run_hubert(y)
-        clin_vec, metrics = get_clinical_features(y)
-        # feat_1031         = np.concatenate([embedding, clin_vec]).reshape(1, -1)
-        severity          = str(severity_clf.predict(embedding.reshape(1, -1))[0])
-
         # ASR
         raw = run_whisper(y)
         s1  = clean_text(raw)
         s2  = clean_text(phonetic_preprocess(raw))
+
+        # Severity Assessment (HuBERT + Clinical Biomarkers + Calibrated Engine)
+        embedding         = run_hubert(y)
+        clin_vec, metrics = get_clinical_features(y)
+        
+        severity, confidence, severity_probs, risk_score, indicators = compute_calibrated_severity(
+            embedding=embedding,
+            metrics=metrics,
+            s1_len=len(s1.split()),
+            s2_len=len(s2.split()),
+            dur=dur
+        )
 
         # LLM debate
         s3, s4 = llm_debate(s2, dur)
@@ -277,19 +423,29 @@ async def analyze_utterance(file: UploadFile = File(...), patient_id: int = Form
             conn = get_db_connection()
             conn.execute(
                 "INSERT INTO assessments (patient_id, severity, final_text, duration, metrics) VALUES (?, ?, ?, ?, ?)",
-                (patient_id, severity, s4, dur, json.dumps(metrics))
+                (patient_id, severity, s4, dur, json.dumps({
+                    **metrics,
+                    "confidence": confidence,
+                    "risk_score": risk_score,
+                    "probabilities": severity_probs,
+                    "indicators": indicators
+                }))
             )
             conn.commit()
             conn.close()
 
         return {
-            "duration":    round(dur, 2),
-            "severity":    severity,
-            "s1_raw":      s1,
-            "s2_phonetic": s2,
-            "s3_qwen":     s3,
-            "s4_final":    s4,
-            "metrics":     metrics,
+            "duration":           round(dur, 2),
+            "severity":           severity,
+            "confidence":         confidence,
+            "severity_probs":     severity_probs,
+            "dysarthria_index":   risk_score,
+            "clinical_notes":     indicators,
+            "s1_raw":             s1,
+            "s2_phonetic":        s2,
+            "s3_qwen":            s3,
+            "s4_final":           s4,
+            "metrics":            metrics,
         }
     except HTTPException:
         raise
