@@ -1,20 +1,58 @@
 @import "tailwindcss";
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&display=swap");
 
 *, *::before, *::after { box-sizing: border-box; }
 
+:root {
+  --bg-primary: #f8fafc;
+  --panel-bg: rgba(255, 255, 255, 0.88);
+  --panel-border: rgba(226, 232, 240, 0.8);
+}
+
 body {
-  font-family: "Inter", system-ui, sans-serif;
-  background: linear-gradient(135deg, #dbeafe 0%, #e0f2fe 50%, #cffafe 100%);
+  font-family: "Plus Jakarta Sans", "Inter", system-ui, -apple-system, sans-serif;
+  background: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.7) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(238, 242, 255, 0.8) 0px, transparent 50%),
+    radial-gradient(at 50% 50%, rgba(240, 253, 250, 0.6) 0px, transparent 50%),
+    radial-gradient(at 100% 100%, rgba(224, 231, 255, 0.5) 0px, transparent 50%),
+    #f8fafc;
+  background-attachment: fixed;
+  color: #1e293b;
   min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glass panel */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(241, 245, 249, 0.9);
+  box-shadow: 0 4px 20px -2px rgba(148, 163, 184, 0.08), 0 2px 6px -1px rgba(148, 163, 184, 0.05);
+}
+
+.glass-panel-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px -4px rgba(148, 163, 184, 0.14), 0 4px 10px -2px rgba(148, 163, 184, 0.06);
 }
 
 /* Recording pulse animation */
 @keyframes record-pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.5); }
-  70%       { box-shadow: 0 0 0 10px rgba(239,68,68,0); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+  70%       { box-shadow: 0 0 0 12px rgba(239, 68, 68, 0); }
 }
 .recording { animation: record-pulse 1.2s ease-out infinite; }
+
+/* Subtle pulse */
+@keyframes soft-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+.soft-pulse { animation: soft-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
 
 /* Spinner */
 @keyframes spin { to { transform: rotate(360deg); } }
@@ -24,7 +62,7 @@ body {
 @keyframes slide-in  { from { opacity:0; transform: translateX(36px) scale(0.97); } to { opacity:1; transform: none; } }
 @keyframes slide-out { from { opacity:1; transform: none; } to { opacity:0; transform: translateX(-36px) scale(0.97); } }
 @keyframes fade-up   { from { opacity:0; transform: translateY(14px); } to { opacity:1; transform: none; } }
-@keyframes pop-in    { 0% { opacity:0; transform: scale(0.82); } 70% { transform: scale(1.04); } 100% { opacity:1; transform: none; } }
+@keyframes pop-in    { 0% { opacity:0; transform: scale(0.85); } 70% { transform: scale(1.03); } 100% { opacity:1; transform: none; } }
 
 .slide-in  { animation: slide-in  0.38s cubic-bezier(.22,.68,0,1.2) both; }
 .slide-out { animation: slide-out 0.26s ease both; }
@@ -32,12 +70,13 @@ body {
 .pop-in    { animation: pop-in    0.36s cubic-bezier(.22,.68,0,1.2) both; }
 
 /* Scrollbar */
-::-webkit-scrollbar       { width: 5px; }
+::-webkit-scrollbar       { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: #bae6fd; border-radius: 9999px; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Level progress bar */
-.level-bar { height: 5px; background: rgba(255,255,255,0.35); border-radius: 9999px; overflow: hidden; }
-.level-bar-fill { height: 100%; background: #fff; border-radius: 9999px; transition: width 0.6s ease; }
+.level-bar { height: 6px; background: rgba(255, 255, 255, 0.35); border-radius: 9999px; overflow: hidden; }
+.level-bar-fill { height: 100%; background: #ffffff; border-radius: 9999px; transition: width 0.6s cubic-bezier(0.16, 1, 0.3, 1); }
 
-audio { width: 100%; border-radius: 8px; margin-top: 4px; }
+audio { width: 100%; border-radius: 10px; margin-top: 4px; }

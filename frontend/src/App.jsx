@@ -5,9 +5,11 @@ import {
   Activity, Mic, Square, User, Lock, LogOut, Users,
   Plus, TrendingUp, CheckCircle, ChevronRight, Volume2,
   Brain, Zap, Star, Upload, BarChart2, X, Flame, Calendar,
+  Sparkles, ShieldCheck, ArrowUpRight, Award, Shield,
 } from "lucide-react";
 import {
-  LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  LineChart, Line, AreaChart, Area, BarChart, Bar,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
 } from "recharts";
 
 const API = "http://localhost:8000";
@@ -34,10 +36,22 @@ function getLevel(sessions) {
 /* ─── Severity helpers ──────────────────────────── */
 const SEV_MAP = { Normal: 4, Mild: 3, Moderate: 2, Severe: 1 };
 const SEV_CLR = {
-  Normal:   { pill: "bg-emerald-100 text-emerald-700 border border-emerald-200", card: "bg-emerald-50 border-emerald-200 text-emerald-700" },
-  Mild:     { pill: "bg-sky-100 text-sky-700 border border-sky-200",            card: "bg-sky-50 border-sky-200 text-sky-700"            },
-  Moderate: { pill: "bg-amber-100 text-amber-700 border border-amber-200",      card: "bg-amber-50 border-amber-200 text-amber-700"      },
-  Severe:   { pill: "bg-red-100 text-red-700 border border-red-200",            card: "bg-red-50 border-red-200 text-red-700"            },
+  Normal:   { 
+    pill: "bg-emerald-50 text-emerald-700 border border-emerald-200/80 shadow-2xs", 
+    card: "bg-gradient-to-br from-emerald-50/90 to-teal-50/50 border-emerald-200/80 text-emerald-800 shadow-sm" 
+  },
+  Mild:     { 
+    pill: "bg-sky-50 text-sky-700 border border-sky-200/80 shadow-2xs", 
+    card: "bg-gradient-to-br from-sky-50/90 to-blue-50/50 border-sky-200/80 text-sky-800 shadow-sm" 
+  },
+  Moderate: { 
+    pill: "bg-amber-50 text-amber-800 border border-amber-200/80 shadow-2xs", 
+    card: "bg-gradient-to-br from-amber-50/90 to-orange-50/50 border-amber-200/80 text-amber-900 shadow-sm" 
+  },
+  Severe:   { 
+    pill: "bg-rose-50 text-rose-700 border border-rose-200/80 shadow-2xs", 
+    card: "bg-gradient-to-br from-rose-50/90 to-red-50/50 border-rose-200/80 text-rose-900 shadow-sm" 
+  },
 };
 
 /* ════════════════════════════════════════════════
@@ -72,31 +86,38 @@ export default function App() {
 ════════════════════════════════════════════════ */
 function Header({ user, onLogout }) {
   return (
-    <header className="sticky top-0 z-50 bg-white/70 backdrop-blur-xl border-b border-sky-100 shadow-sm">
-      <div className="max-w-[1200px] mx-auto px-4 h-14 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-2xl border-b border-slate-200/70 shadow-xs">
+      <div className="max-w-[1240px] mx-auto px-4 h-16 flex items-center justify-between">
         {/* Logo */}
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center shadow-md shadow-sky-200">
-            <Brain size={18} className="text-white" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-300 flex items-center justify-center shadow-md shadow-sky-500/25 ring-2 ring-white">
+            <Brain size={20} className="text-white" />
           </div>
           <div className="leading-tight">
-            <div className="text-[17px] font-extrabold text-sky-700 tracking-tight">NeuroSpeak</div>
-            <div className="text-[10px] text-slate-400 font-medium">Clinical AI Assessment</div>
+            <div className="text-[18px] font-black bg-gradient-to-r from-sky-800 via-blue-900 to-slate-900 bg-clip-text text-transparent tracking-tight">
+              NeuroSpeak<span className="text-sky-500 font-extrabold text-sm ml-1">AI</span>
+            </div>
+            <div className="text-[10px] text-slate-500 font-semibold tracking-wider uppercase flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              Clinical Speech Biomarkers
+            </div>
           </div>
         </div>
 
         {/* User */}
         {user && (
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-              {user.username[0].toUpperCase()}
-            </div>
-            <div className="leading-tight hidden sm:block">
-              <div className="text-sm font-bold text-slate-800">{user.username}</div>
-              <div className="text-[11px] text-sky-600 font-semibold capitalize">{user.role}</div>
+          <div className="flex items-center gap-3.5">
+            <div className="flex items-center gap-2.5 bg-slate-100/80 border border-slate-200/60 px-3 py-1.5 rounded-2xl">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center text-white text-xs font-black shadow-xs">
+                {user.username[0].toUpperCase()}
+              </div>
+              <div className="leading-tight hidden sm:block text-left">
+                <div className="text-xs font-bold text-slate-800">{user.username}</div>
+                <div className="text-[10px] text-sky-600 font-bold capitalize">{user.role}</div>
+              </div>
             </div>
             <button onClick={onLogout}
-              className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 border border-slate-200 rounded-full px-3 py-1.5 hover:bg-slate-50 transition">
+              className="flex items-center gap-1.5 text-xs font-bold text-slate-600 border border-slate-200 bg-white/90 rounded-xl px-3.5 py-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-all shadow-2xs">
               <LogOut size={13} /> Logout
             </button>
           </div>
@@ -129,50 +150,64 @@ function AuthScreen({ onLogin }) {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-16 fade-up">
+    <div className="max-w-md mx-auto mt-12 fade-up px-3">
       <div className="text-center mb-8">
-        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-sky-500 to-cyan-400 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-sky-200">
-          <Brain size={30} className="text-white" />
+        <div className="w-18 h-18 rounded-3xl bg-gradient-to-tr from-sky-500 via-sky-400 to-cyan-300 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-sky-500/25 ring-4 ring-white/80">
+          <Brain size={36} className="text-white drop-shadow-xs" />
         </div>
-        <h1 className="text-3xl font-black text-sky-700 tracking-tight">NeuroSpeak AI</h1>
-        <p className="text-slate-400 text-sm mt-1">Clinical Speech Assessment Platform</p>
+        <h1 className="text-3xl font-black bg-gradient-to-r from-sky-800 via-blue-900 to-slate-900 bg-clip-text text-transparent tracking-tight">
+          NeuroSpeak AI
+        </h1>
+        <p className="text-slate-500 text-xs font-semibold uppercase tracking-wider mt-1.5 flex items-center justify-center gap-1.5">
+          <Sparkles size={13} className="text-sky-500" />
+          Clinical Speech Assessment Platform
+        </p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-lg shadow-sky-100 p-7">
-        <h2 className="text-lg font-bold text-slate-800 text-center mb-5">{reg ? "Create Account" : "Welcome Back"}</h2>
+      <div className="glass-panel rounded-3xl p-8 border border-white/80 shadow-xl shadow-slate-200/50">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-extrabold text-slate-800 tracking-tight">
+            {reg ? "Create Clinical Account" : "Access Workspace"}
+          </h2>
+          <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-sky-50 text-sky-700 border border-sky-100">
+            {reg ? "Registration" : "Secure Portal"}
+          </span>
+        </div>
 
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-2.5 mb-4">{error}</div>
+          <div className="bg-red-50/90 border border-red-200 text-red-700 text-xs font-semibold rounded-2xl px-4 py-3 mb-5 leading-relaxed">
+            {error}
+          </div>
         )}
 
-        <form onSubmit={submit} className="flex flex-col gap-3">
+        <form onSubmit={submit} className="flex flex-col gap-3.5">
           <div className="relative">
-            <User size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
-            <input className="w-full pl-9 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100 transition"
+            <User size={15} className="absolute left-3.5 top-3.5 text-slate-400" />
+            <input className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200/80 bg-white/70 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-500/10 transition-all font-medium"
               type="text" placeholder="Username" value={username} required onChange={e => setUsername(e.target.value)} />
           </div>
           <div className="relative">
-            <Lock size={14} className="absolute left-3.5 top-3.5 text-slate-400" />
-            <input className="w-full pl-9 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white focus:ring-2 focus:ring-sky-100 transition"
+            <Lock size={15} className="absolute left-3.5 top-3.5 text-slate-400" />
+            <input className="w-full pl-10 pr-4 py-3 rounded-2xl border border-slate-200/80 bg-white/70 text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-400 focus:bg-white focus:ring-4 focus:ring-sky-500/10 transition-all font-medium"
               type="password" placeholder="Password" value={password} required onChange={e => setPassword(e.target.value)} />
           </div>
           {reg && (
             <select value={role} onChange={e => setRole(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-800 focus:outline-none focus:border-sky-400 focus:ring-2 focus:ring-sky-100 transition">
-              <option value="patient">Patient</option>
-              <option value="clinician">Clinician</option>
+              className="w-full px-4 py-3 rounded-2xl border border-slate-200/80 bg-white/70 text-sm text-slate-800 focus:outline-none focus:border-sky-400 focus:ring-4 focus:ring-sky-500/10 transition-all font-semibold">
+              <option value="patient">Patient Mode</option>
+              <option value="clinician">Clinician Mode</option>
             </select>
           )}
           <button type="submit" disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 to-cyan-500 text-white font-bold text-sm shadow-md shadow-sky-200 hover:shadow-lg hover:shadow-sky-300 hover:-translate-y-0.5 transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-1">
-            {loading ? <><Activity size={15} className="spinner" /> Please wait…</> : reg ? "Create Account" : "Sign In →"}
+            className="w-full py-3.5 rounded-2xl bg-gradient-to-r from-sky-500 via-sky-400 to-blue-600 text-white font-extrabold text-sm shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 mt-2">
+            {loading ? <><Activity size={15} className="spinner" /> Authenticating…</> : reg ? "Register Account →" : "Sign In to Portal →"}
           </button>
         </form>
 
-        <p className="text-center text-xs text-slate-400 mt-4">
-          {reg ? "Already have an account? " : "New here? "}
-          <span onClick={() => setReg(!reg)} className="text-sky-600 font-bold cursor-pointer hover:underline">
-            {reg ? "Sign In" : "Register"}
+        <p className="text-center text-xs text-slate-400 mt-5 font-medium">
+          {reg ? "Already have an account? " : "New to NeuroSpeak? "}
+          <span onClick={() => setReg(!reg)} className="text-sky-600 font-extrabold cursor-pointer hover:underline">
+            {reg ? "Sign In" : "Register now"}
           </span>
         </p>
 
@@ -197,9 +232,25 @@ function PatientDashboard({ user }) {
   }, [user.id]);
   useEffect(() => { refresh(); }, [refresh]);
 
+  const [chartView, setChartView] = useState("all");
+
   const chartData = data.assessments.map((a, i) => {
-    const m = JSON.parse(a.metrics || "{}");
-    return { name: `S${i + 1}`, score: SEV_MAP[a.severity] || 0, severity: a.severity, f0_std: m.f0_std || 0, centroid: m.spectral_centroid || 0 };
+    let m = {};
+    try { m = JSON.parse(a.metrics || "{}"); } catch {}
+    return {
+      name: `S${i + 1}`,
+      session: i + 1,
+      score: SEV_MAP[a.severity] || 0,
+      severity: a.severity,
+      confidence: m.confidence || (a.severity === "Normal" ? 85 : 78),
+      dysarthria_index: m.risk_score !== undefined ? m.risk_score : (4 - (SEV_MAP[a.severity] || 4)) * 25,
+      f0_std: m.f0_std || 0,
+      jitter_pct: m.jitter ? +(m.jitter * 100).toFixed(2) : 0,
+      shimmer_pct: m.shimmer ? +(m.shimmer * 100).toFixed(1) : 0,
+      pause_pct: m.pause_ratio ? Math.round(m.pause_ratio * 100) : 0,
+      centroid: m.spectral_centroid || 0,
+      timestamp: a.timestamp || null
+    };
   });
 
   const sessions   = data.assessments.length;
@@ -211,93 +262,209 @@ function PatientDashboard({ user }) {
   const apptStr    = apptDate.toLocaleDateString("en-US", { day: "numeric", month: "short" });
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-5">
 
-      {/* ── Level Banner ── */}
-      <div className="rounded-2xl bg-gradient-to-r from-sky-600 via-sky-500 to-cyan-400 text-white px-6 py-4 flex flex-wrap items-center gap-5 shadow-lg shadow-sky-200">
+      {/* ── Level Banner (Sleek light gradient) ── */}
+      <div className="rounded-3xl bg-gradient-to-r from-sky-500 via-sky-400 to-cyan-400 text-white px-7 py-5 flex flex-wrap items-center gap-6 shadow-xl shadow-sky-500/15 border border-white/20 relative overflow-hidden">
+        <div className="absolute -right-10 -bottom-10 w-44 h-44 rounded-full bg-white/10 blur-2xl pointer-events-none" />
+        
         {/* Level info */}
-        <div className="flex items-center gap-3 flex-1 min-w-0">
-          <span className="text-3xl">{level.emoji}</span>
+        <div className="flex items-center gap-3.5 flex-1 min-w-[220px]">
+          <div className="w-13 h-13 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center text-3xl shadow-inner border border-white/30">
+            {level.emoji}
+          </div>
           <div>
-            <div className="text-[10px] font-semibold uppercase tracking-widest opacity-75">Current Level</div>
-            <div className="text-xl font-black leading-tight">Level {level.idx + 1} · {level.name}</div>
-            <div className="text-[11px] opacity-70 mt-0.5">Making real progress</div>
+            <div className="text-[10px] font-bold uppercase tracking-widest text-sky-100 flex items-center gap-1.5">
+              <span>Patient Progress Tier</span>
+              <span className="w-1.5 h-1.5 rounded-full bg-cyan-200 animate-ping" />
+            </div>
+            <div className="text-2xl font-black leading-tight tracking-tight mt-0.5">Level {level.idx + 1} · {level.name}</div>
+            <div className="text-xs text-sky-100 font-medium">Continuous neuro-speech rehabilitation</div>
           </div>
         </div>
 
         {/* Progress bar */}
-        <div className="flex-1 min-w-[150px]">
-          <div className="flex justify-between text-[11px] opacity-80 mb-1.5">
+        <div className="flex-1 min-w-[180px]">
+          <div className="flex justify-between text-xs font-semibold text-white/90 mb-1.5">
             <span>{level.name}</span>
-            <span>{level.next?.name ?? "Max Level"}</span>
+            <span className="text-sky-100">{level.next?.name ?? "Master Level"}</span>
           </div>
           <div className="level-bar"><div className="level-bar-fill" style={{ width: `${level.pct}%` }} /></div>
-          <div className="text-[11px] opacity-60 mt-1">{level.pct}% to next level</div>
+          <div className="text-[11px] text-white/80 font-medium mt-1.5 flex justify-between">
+            <span>{level.pct}% to next level</span>
+            <span className="font-bold">{sessions} sessions logged</span>
+          </div>
         </div>
 
         {/* Streak + Appointment */}
-        <div className="flex gap-2">
+        <div className="flex gap-2.5">
           <button onClick={() => setProfileOpen(true)}
-            className="bg-white/20 hover:bg-white/30 transition rounded-xl px-4 py-2 text-center min-w-[68px]">
-            <Flame size={18} className="mx-auto mb-0.5" />
+            className="bg-white/15 hover:bg-white/25 border border-white/20 backdrop-blur-md transition-all rounded-2xl px-4 py-2.5 text-center min-w-[76px] hover:scale-102">
+            <Flame size={18} className="mx-auto mb-0.5 text-amber-300" />
             <div className="text-sm font-black">2</div>
-            <div className="text-[9px] opacity-75">Day Streak</div>
+            <div className="text-[10px] font-semibold text-white/80">Day Streak</div>
           </button>
-          <div className="bg-white/20 rounded-xl px-4 py-2 text-center min-w-[68px]">
-            <Calendar size={18} className="mx-auto mb-0.5" />
+          <div className="bg-white/15 border border-white/20 backdrop-blur-md rounded-2xl px-4 py-2.5 text-center min-w-[76px]">
+            <Calendar size={18} className="mx-auto mb-0.5 text-sky-200" />
             <div className="text-sm font-black">{apptStr}</div>
-            <div className="text-[9px] opacity-75">Next Appt</div>
+            <div className="text-[10px] font-semibold text-white/80">Next Review</div>
           </div>
         </div>
       </div>
 
-      {/* ── Stat Cards ── */}
-      <div className="grid grid-cols-3 gap-4">
+      {/* ── Stat Cards (Modern Light Cards with Soft Glow Accents) ── */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[
-          { Icon: BarChart2, label: "Total Sessions", value: sessions,   color: "text-sky-500"     },
-          { Icon: CheckCircle,label: "Words Mastered", value: mastered,   color: "text-emerald-500" },
-          { Icon: Star,      label: "Rehab Score",    value: rehabScore,  color: "text-violet-500"  },
-        ].map(({ Icon, label, value, color }, i) => (
-          <div key={i} className="bg-white rounded-2xl shadow-sm shadow-slate-100 p-5 fade-up" style={{ animationDelay: `${i * 60}ms` }}>
-            <Icon size={22} className={`${color} mb-2`} />
-            <div className="text-[34px] font-black text-slate-800 leading-none">{value}</div>
-            <div className="text-[13px] text-slate-400 font-medium mt-1">{label}</div>
+          { Icon: BarChart2, label: "Total Clinical Sessions", value: sessions, sub: "Longitudinal tracking", color: "text-sky-500", bg: "bg-sky-500/10", border: "border-sky-200/50" },
+          { Icon: CheckCircle, label: "Vocabulary Mastered", value: mastered, sub: "≥80% phonetic accuracy", color: "text-emerald-500", bg: "bg-emerald-500/10", border: "border-emerald-200/50" },
+          { Icon: Star, label: "Rehab Fluency Score", value: rehabScore, sub: "Cumulative progress", color: "text-violet-500", bg: "bg-violet-500/10", border: "border-violet-200/50" },
+        ].map(({ Icon, label, value, sub, color, bg, border }, i) => (
+          <div key={i} className={`glass-panel glass-panel-hover rounded-2xl p-5 border ${border} flex items-center gap-4 fade-up`} style={{ animationDelay: `${i * 60}ms` }}>
+            <div className={`w-12 h-12 rounded-2xl ${bg} flex items-center justify-center ${color} shrink-0`}>
+              <Icon size={24} />
+            </div>
+            <div>
+              <div className="text-3xl font-black text-slate-800 tracking-tight leading-none">{value}</div>
+              <div className="text-xs font-bold text-slate-600 mt-1">{label}</div>
+              <div className="text-[11px] text-slate-400 font-medium">{sub}</div>
+            </div>
           </div>
         ))}
       </div>
 
       {/* ── Tabs ── */}
       <div className="flex gap-2">
-        <TabBtn active={tab === "progress"} onClick={() => setTab("progress")}><TrendingUp size={14} /> Progress</TabBtn>
-        <TabBtn active={tab === "rehab"}    onClick={() => setTab("rehab")}><Zap size={14} /> Rehab Studio</TabBtn>
+        <TabBtn active={tab === "progress"} onClick={() => setTab("progress")}><TrendingUp size={15} /> Clinical Progress &amp; Analytics</TabBtn>
+        <TabBtn active={tab === "rehab"}    onClick={() => setTab("rehab")}><Zap size={15} /> Speech Rehabilitation Studio</TabBtn>
       </div>
 
       {/* ── Progress Tab ── */}
       {tab === "progress" && (
-        <div className="flex flex-col gap-4 fade-up">
+        <div className="flex flex-col gap-5 fade-up">
           <Card>
-            <SectionHeader Icon={Mic} title="Real-Time Utterance Analyzer"
-              sub="Record or upload speech · Full HuBERT + Whisper 4-stage pipeline" />
+            <SectionHeader Icon={Mic} title="Clinical Utterance Analyzer"
+              sub="Record live speech · HuBERT feature extraction + Calibrated multi-tier dysarthria screening"
+              badge="Active Diagnostic" />
             <AudioAnalyzer patientId={user.id} onComplete={refresh} showPipeline />
           </Card>
 
+          {/* Recovery Trajectory Chart with interactive view toggle */}
           <Card>
-            <SectionHeader Icon={TrendingUp} title="Recovery Progress" />
-            {chartData.length > 0
-              ? <GlowChart data={chartData} dataKey="score" color="#0ea5e9" yDomain={[0,4]}
-                  yFormatter={v => v===4?"Normal":v===3?"Mild":v===2?"Moderate":"Severe"}
-                  tooltipFn={(_, __, p) => [p.payload.severity, "Status"]} />
-              : <EmptyState />}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-lg bg-sky-100 border border-sky-200/60 flex items-center justify-center text-sky-600">
+                    <TrendingUp size={16} />
+                  </div>
+                  <h2 className="text-[16px] font-extrabold text-slate-800 tracking-tight">Longitudinal Speech Recovery Trajectory</h2>
+                </div>
+                <p className="text-xs text-slate-400 ml-9 mt-0.5 font-medium">Session-by-session clinical severity and acoustic evolution</p>
+              </div>
+
+              {/* View filter buttons */}
+              <div className="flex items-center gap-1.5 bg-slate-100/90 p-1 rounded-xl border border-slate-200/60">
+                {[
+                  { id: "all", label: "Severity Tier" },
+                  { id: "risk", label: "Dysarthria Index" },
+                  { id: "vocal", label: "Pitch Perturbation" },
+                ].map(b => (
+                  <button
+                    key={b.id}
+                    onClick={() => setChartView(b.id)}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                      chartView === b.id
+                        ? "bg-white text-sky-600 shadow-xs"
+                        : "text-slate-500 hover:text-slate-800"
+                    }`}
+                  >
+                    {b.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {chartData.length > 0 ? (
+              <div>
+                {chartView === "all" && (
+                  <GlowChart 
+                    data={chartData} 
+                    dataKey="score" 
+                    color="#0ea5e9" 
+                    yDomain={[0, 4]}
+                    height={230}
+                    yFormatter={v => v===4?"Normal":v===3?"Mild":v===2?"Moderate":v===1?"Severe":""}
+                    tooltipFn={(v, p) => [p.severity, "Status"]} 
+                  />
+                )}
+                {chartView === "risk" && (
+                  <GlowChart 
+                    data={chartData} 
+                    dataKey="dysarthria_index" 
+                    color="#f59e0b" 
+                    yDomain={[0, 100]}
+                    height={230}
+                    unit="/ 100"
+                    tooltipFn={(v) => [`${v} / 100`, "Impairment Index"]} 
+                  />
+                )}
+                {chartView === "vocal" && (
+                  <GlowChart 
+                    data={chartData} 
+                    dataKey="f0_std" 
+                    color="#10b981" 
+                    height={230}
+                    unit="Hz"
+                    tooltipFn={(v) => [`${v} Hz`, "F0 Instability"]} 
+                  />
+                )}
+              </div>
+            ) : (
+              <EmptyState />
+            )}
           </Card>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Secondary Acoustic Analytics Row */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
             <Card>
-              <SectionHeader Icon={Activity} title="Pitch Stability (F0 Std)" />
-              {chartData.length > 0 ? <GlowChart data={chartData} dataKey="f0_std" color="#22c55e" /> : <EmptyState />}
+              <SectionHeader 
+                Icon={Activity} 
+                title="Vocal Tremor &amp; Perturbation (Jitter %)" 
+                sub="Lower values indicate stabilized phonation control"
+                badge="Laryngeal Biomarker" 
+              />
+              {chartData.length > 0 ? (
+                <GlowChart 
+                  data={chartData} 
+                  dataKey="jitter_pct" 
+                  color="#10b981" 
+                  unit="%"
+                  height={190}
+                  tooltipFn={v => [`${v}%`, "Pitch Jitter"]} 
+                />
+              ) : (
+                <EmptyState />
+              )}
             </Card>
+
             <Card>
-              <SectionHeader Icon={Zap} title="Spectral Centroid" />
-              {chartData.length > 0 ? <GlowChart data={chartData} dataKey="centroid" color="#a855f7" /> : <EmptyState />}
+              <SectionHeader 
+                Icon={Zap} 
+                title="Consonant Precision (Centroid Hz)" 
+                sub="Target range 1,800 - 3,200 Hz for clear speech articulation"
+                badge="Articulatory Dynamics" 
+              />
+              {chartData.length > 0 ? (
+                <GlowChart 
+                  data={chartData} 
+                  dataKey="centroid" 
+                  color="#8b5cf6" 
+                  unit="Hz"
+                  height={190}
+                  tooltipFn={v => [`${Math.round(v)} Hz`, "Spectral Centroid"]} 
+                />
+              ) : (
+                <EmptyState />
+              )}
             </Card>
           </div>
         </div>
@@ -429,47 +596,107 @@ function ProfileModal({ user, level, sessions, mastered, rehabScore, latestSev, 
 ════════════════════════════════════════════════ */
 function Card({ children, className = "" }) {
   return (
-    <div className={`bg-white rounded-2xl shadow-sm shadow-slate-100 p-5 ${className}`}>{children}</div>
+    <div className={`glass-panel rounded-2xl p-6 glass-panel-hover border border-slate-150/80 shadow-sm ${className}`}>{children}</div>
   );
 }
 
 function TabBtn({ active, onClick, children }) {
   return (
     <button onClick={onClick}
-      className={`flex items-center gap-1.5 px-5 py-2 rounded-full text-[13px] font-semibold transition
+      className={`flex items-center gap-2 px-5 py-2.5 rounded-full text-xs font-bold transition-all duration-300
         ${active
-          ? "bg-sky-500 text-white shadow-md shadow-sky-200"
-          : "bg-white text-slate-500 border border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200"}`}>
+          ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-md shadow-sky-500/25 ring-2 ring-sky-300/40 translate-y-[-1px]"
+          : "bg-white/90 text-slate-600 border border-slate-200/80 hover:bg-sky-50/80 hover:text-sky-600 hover:border-sky-200 shadow-xs"}`}>
       {children}
     </button>
   );
 }
 
-function SectionHeader({ Icon, title, sub }) {
+function SectionHeader({ Icon, title, sub, badge }) {
   return (
-    <div className="mb-4">
-      <div className="flex items-center gap-2">
-        <Icon size={16} className="text-sky-500" />
-        <h2 className="text-[15px] font-bold text-slate-800">{title}</h2>
+    <div className="mb-4 flex items-center justify-between">
+      <div>
+        <div className="flex items-center gap-2.5">
+          <div className="w-7 h-7 rounded-lg bg-sky-100/70 border border-sky-200/50 flex items-center justify-center text-sky-600">
+            <Icon size={15} />
+          </div>
+          <h2 className="text-[15px] font-extrabold text-slate-800 tracking-tight">{title}</h2>
+        </div>
+        {sub && <p className="text-xs text-slate-400 ml-9 mt-0.5 font-medium">{sub}</p>}
       </div>
-      {sub && <p className="text-xs text-slate-400 ml-6 mt-0.5">{sub}</p>}
+      {badge && (
+        <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200/60 shadow-2xs">
+          {badge}
+        </span>
+      )}
     </div>
   );
 }
 
-function GlowChart({ data, dataKey, color, yDomain, yFormatter, tooltipFn }) {
+function CustomChartTooltip({ active, payload, label, formatter, unit = "" }) {
+  if (active && payload && payload.length) {
+    const val = payload[0].value;
+    const name = payload[0].name || label;
+    const itemPayload = payload[0].payload;
+    const formattedVal = formatter ? formatter(val, itemPayload) : `${val} ${unit}`;
+
+    return (
+      <div className="bg-white/95 backdrop-blur-md border border-slate-200/80 px-3.5 py-2.5 rounded-xl shadow-xl shadow-slate-300/30 text-xs">
+        <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">{itemPayload.name || label}</div>
+        <div className="flex items-center gap-2">
+          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: payload[0].color || "#0ea5e9" }} />
+          <span className="font-extrabold text-slate-800 text-sm">{formattedVal}</span>
+        </div>
+        {itemPayload.severity && (
+          <div className="mt-1.5 pt-1.5 border-t border-slate-100 flex items-center justify-between gap-3 text-[10px]">
+            <span className="text-slate-400">Severity:</span>
+            <span className="font-bold text-sky-600">{itemPayload.severity}</span>
+          </div>
+        )}
+      </div>
+    );
+  }
+  return null;
+}
+
+function GlowChart({ data, dataKey, color = "#0ea5e9", gradientId = "chartGrad", yDomain, yFormatter, tooltipFn, unit = "", height = 210 }) {
+  const gradId = `grad_${dataKey}_${color.replace("#","")}`;
   return (
-    <ResponsiveContainer width="100%" height={190}>
-      <LineChart data={data}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-        <XAxis dataKey="name" tick={{ fontSize: 11, fill: "#94a3b8" }} axisLine={false} tickLine={false} />
-        <YAxis domain={yDomain} tickFormatter={yFormatter} tick={{ fontSize: 11, fill: "#94a3b8" }}
-          axisLine={false} tickLine={false} width={yFormatter ? 68 : 34} />
-        <Tooltip contentStyle={{ background:"#fff", border:"1px solid #e2e8f0", borderRadius:10, fontSize:13, boxShadow:"0 4px 16px rgba(0,0,0,.08)" }} formatter={tooltipFn} />
-        <Line type="monotone" dataKey={dataKey} stroke={color} strokeWidth={2.5}
-          dot={{ r:4, fill:color, stroke:"#fff", strokeWidth:2 }}
-          activeDot={{ r:7, stroke:color, strokeWidth:2, fill:"#fff" }} />
-      </LineChart>
+    <ResponsiveContainer width="100%" height={height}>
+      <AreaChart data={data} margin={{ top: 12, right: 12, left: -10, bottom: 0 }}>
+        <defs>
+          <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor={color} stopOpacity={0.32} />
+            <stop offset="95%" stopColor={color} stopOpacity={0.01} />
+          </linearGradient>
+        </defs>
+        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" strokeOpacity={0.6} />
+        <XAxis 
+          dataKey="name" 
+          tick={{ fontSize: 11, fill: "#64748b", fontWeight: 600 }} 
+          axisLine={{ stroke: "#e2e8f0" }} 
+          tickLine={false} 
+        />
+        <YAxis 
+          domain={yDomain} 
+          tickFormatter={yFormatter} 
+          tick={{ fontSize: 11, fill: "#64748b", fontWeight: 500 }}
+          axisLine={false} 
+          tickLine={false} 
+          width={yFormatter ? 64 : 36} 
+        />
+        <Tooltip content={<CustomChartTooltip formatter={tooltipFn} unit={unit} />} />
+        <Area 
+          type="monotone" 
+          dataKey={dataKey} 
+          stroke={color} 
+          strokeWidth={2.8} 
+          fillOpacity={1} 
+          fill={`url(#${gradId})`}
+          dot={{ r: 4, fill: "#fff", stroke: color, strokeWidth: 2.5 }}
+          activeDot={{ r: 6.5, fill: color, stroke: "#fff", strokeWidth: 3 }} 
+        />
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
