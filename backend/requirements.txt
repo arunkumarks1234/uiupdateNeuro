@@ -1,0 +1,13 @@
+fastapi
+uvicorn[standard]
+torch
+torchaudio
+transformers
+librosa
+scikit-learn
+joblib
+groq
+pydantic
+python-multipart
+soundfile
+accelerate

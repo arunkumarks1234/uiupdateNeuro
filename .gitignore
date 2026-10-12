@@ -1,0 +1,10 @@
+venv/
+node_modules/
+Outputs/
+TORGO_Dataset/
+__pycache__/
+*.pyc
+.env
+dist/
+build/
+.DS_Store
